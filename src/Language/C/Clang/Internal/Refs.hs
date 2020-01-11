@@ -59,10 +59,9 @@ newRoot ptr fin = do
 
 instance Parent (Root a) where
   incCount r = modifyMVar_ (nodeState r) $ \ns -> return ns { refCount = refCount ns + 1 }
-  decCount r = modifyMVar_ (nodeState r) $ \ns -> do
-    if refCount ns == 1 && destructable ns
-      then trueFinalize r >> return ns { refCount = 0, destructable = False }
-      else return ns { refCount = refCount ns - 1 }
+  decCount r = modifyMVar_ (nodeState r) $ \ns -> if refCount ns == 1 && destructable ns
+    then trueFinalize r >> return ns { refCount = 0, destructable = False }
+    else return ns { refCount = refCount ns - 1 }
 
 type instance RefOf (Root a) = a
 instance Clang (Root a) where
@@ -95,10 +94,10 @@ data Leaf p a = Leaf p (ForeignPtr a)
 
 newLeaf :: Parent p => p -> (Ptr (RefOf p) -> IO ( Ptr a, Finalizer )) -> IO (Leaf p a)
 newLeaf prn f = deref prn $ \pptr -> do
-    ( cptr, cfin ) <- f pptr
-    incCount prn
-    rt <- newForeignPtr cptr (cfin >> decCount prn)
-    return $ Leaf prn rt
+  ( cptr, cfin ) <- f pptr
+  incCount prn
+  rt <- newForeignPtr cptr (cfin >> decCount prn)
+  return $ Leaf prn rt
 
 type instance ParentOf (Leaf p a) = p
 instance Parent p => Child (Leaf p a) where
