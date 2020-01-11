@@ -3,3 +3,4 @@ src/**/*.c
 .cabal-sandbox
 .stack-work
 srcLanguageCClangInternalFFI.c
+.envrc
